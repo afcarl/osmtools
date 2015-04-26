@@ -8,6 +8,10 @@ import xml.parsers.expat
 class Primitive(object):
 
     def __init__(self, attrs):
+        if 'id' in attrs:
+            self.id = int(attrs['id'])
+        else:
+            self.id = None
         self.attrs = attrs
         self.tags = []
         return
@@ -24,20 +28,19 @@ class Primitive(object):
             self.tags.append((k, v))
         return
 
-    def dump(self):
-        if self.tags:
-            tags = ( u'%s=%s' % (k,v) for (k,v) in self.tags )
-            print '%s: %s' % (self.__class__.__name__,
-                              ', '.join(tags).encode('utf-8'))
-        return
-
 
 ##  Node
 ##
 class Node(Primitive):
 
-    pass
-
+    def __init__(self, attrs):
+        Primitive.__init__(self, attrs)
+        self.pos = None
+        if 'lat' in attrs and 'lon' in attrs:
+            self.pos = (float(attrs['lat']),
+                        float(attrs['lon']))
+        return
+    
 
 ##  Way
 ##
@@ -89,6 +92,9 @@ class OSMXMLParser(object):
         self._expat.Parse(data)
         return
 
+    def add_object(self, obj):
+        raise NotImplementedError
+
     def _start_element(self, name, attrs):
         self._stack.append((name, attrs))
         if name not in self.elemcount:
@@ -122,7 +128,7 @@ class OSMXMLParser(object):
         #
         if name in ('node', 'way', 'relation'):
             assert self._obj is not None
-            self._obj.dump()
+            self.add_object(self._obj)
             self._obj = None
         return
     
@@ -133,7 +139,14 @@ class OSMXMLParser(object):
 # main
 def main(argv):
     import fileinput
-    parser = OSMXMLParser()
+    class Parser(OSMXMLParser):
+        def add_object(self, obj):
+            if obj.tags:
+                tags = ( u'%s=%s' % (k,v) for (k,v) in obj.tags )
+                print '%s: %s' % (obj.__class__.__name__,
+                                  ', '.join(tags).encode('utf-8'))
+            return
+    parser = Parser()
     for (lineno,line) in enumerate(fileinput.input()):
         try:
             parser.feed(line)
