@@ -1,2 +1,3 @@
-CREATE TABLE tag (nid, name, yomi);
-CREATE VIRTUAL TABLE point USING rtree (nid, x, y);
+CREATE TABLE tag (tid, name, yomi);
+CREATE TABLE node (nid, tid);
+CREATE VIRTUAL TABLE point USING rtree (nid, lat, lng);

@@ -12,31 +12,26 @@ def main(argv):
     src = srcdb.cursor()
     dst = dstdb.cursor()
     #
-    tid2nid = {}
-    nidused = set()
+    nid2tid = {}
     src.execute('SELECT tid,nids FROM way WHERE tid is not NULL;')
     for (tid,b) in src:
         n = len(b)/4
         nids = struct.unpack('<'+'I'*n, b)
-        nidused.update(nids)
         for nid in nids:
-            tid2nid[tid] = nid
-    src.execute('SELECT tid,nid FROM node WHERE tid is not NULL;')
-    for (tid,nid) in src:
-        nidused.add(nid)
-        tid2nid[tid] = nid
-    print >>sys.stderr, 'tid2nid:', len(tid2nid)
-    print >>sys.stderr, 'nidused:', len(nidused)
+            nid2tid[nid] = tid
+    print >>sys.stderr, 'nid2tid:', len(nid2tid)
     #
     src.execute('SELECT * FROM node;')
-    for (nid,_,lat,lng) in src:
-        if nid not in nidused: continue
+    for (nid,tid,lat,lng) in src:
+        if tid is None:
+            if nid not in nid2tid: continue
+            tid = nid2tid[nid]
+        dst.execute('INSERT INTO node VALUES (?,?);', (nid,tid))
         dst.execute('INSERT INTO point VALUES (?,?,?);', (nid,lat,lng))
     dstdb.commit()
     src.execute('SELECT * FROM tag;')
     for (tid,name,yomi) in src:
-        nid = tid2nid[tid]
-        dst.execute('INSERT INTO tag VALUES (?,?,?);', (nid,name,yomi))
+        dst.execute('INSERT INTO tag VALUES (?,?,?);', (tid,name,yomi))
     dstdb.commit()
     return 0
 
