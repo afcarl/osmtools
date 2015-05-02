@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import sys
 import xml.parsers.expat
 
 
@@ -9,9 +8,9 @@ class Primitive(object):
 
     def __init__(self, attrs):
         if 'id' in attrs:
-            self.id = int(attrs['id'])
+            self.nid = int(attrs['id'])
         else:
-            self.id = None
+            self.nid = None
         self.attrs = attrs
         self.tags = []
         return
@@ -52,7 +51,8 @@ class Way(Primitive):
         return
     
     def add_node(self, attrs):
-        self.nodes.append(attrs)
+        if 'ref' in attrs:
+            self.nodes.append(int(attrs['ref']))
         return
 
 
@@ -66,7 +66,8 @@ class Relation(Primitive):
         return
     
     def add_member(self, attrs):
-        self.members.append(attrs)
+        if 'ref' in attrs:
+            self.members.append(int(attrs['ref']))
         return
 
 
@@ -85,7 +86,6 @@ class OSMXMLParser(object):
     def reset(self):
         self._stack = []
         self._obj = None
-        self.elemcount = {}
         return
 
     def feed(self, data):
@@ -97,9 +97,6 @@ class OSMXMLParser(object):
 
     def _start_element(self, name, attrs):
         self._stack.append((name, attrs))
-        if name not in self.elemcount:
-            self.elemcount[name] = 0
-        self.elemcount[name] += 1
         #
         if name == 'tag':
             if isinstance(self._obj, Primitive):
@@ -135,27 +132,3 @@ class OSMXMLParser(object):
     def _char_data(self, data):
         #print (data, )
         return
-
-# main
-def main(argv):
-    import fileinput
-    class Parser(OSMXMLParser):
-        def add_object(self, obj):
-            if obj.tags:
-                tags = ( u'%s=%s' % (k,v) for (k,v) in obj.tags )
-                print '%s: %s' % (obj.__class__.__name__,
-                                  ', '.join(tags).encode('utf-8'))
-            return
-    parser = Parser()
-    for (lineno,line) in enumerate(fileinput.input()):
-        try:
-            parser.feed(line)
-        except Exception, e:
-            print >>sys.stderr, (lineno, e)
-            raise
-        if (lineno%10000) == 0:
-            sys.stderr.write('%r\n' % lineno); sys.stderr.flush()
-    print >>sys.stderr, parser.elemcount
-    return 0
-
-if __name__ == '__main__': sys.exit(main(sys.argv))
