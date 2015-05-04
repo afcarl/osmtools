@@ -32,16 +32,16 @@ def main(argv):
     point = conn.cursor()
     point.execute('SELECT nid,lat,lng FROM point WHERE ?<=lat and ?<=lng and lat<=? and lng<=?;',
                   (lat0-radius,lng0-radius, lat0+radius,lng0+radius))
-    tids = set()
+    eids = set()
     for (nid,lat1,lng1) in point:
-        node.execute('SELECT tid FROM node WHERE nid=?', (nid,))
-        for (tid,) in node:
-            print (lat1,lng1), getdist((lat0,lng0),(lat1,lng1)), tid
-            if tid in tids: continue
-            tids.add(tid)
-            tag.execute('SELECT name,yomi FROM tag WHERE tid=?;', (tid,))
-            for (name,yomi) in tag:
-                print ' ',name.encode('sjis','ignore')
+        node.execute('SELECT eid FROM node WHERE nid=?', (nid,))
+        for (eid,) in node:
+            print (lat1,lng1), getdist((lat0,lng0),(lat1,lng1)), eid
+            if eid in eids: continue
+            eids.add(eid)
+            tag.execute('SELECT name,props FROM entity WHERE eid=?;', (eid,))
+            for (name,props) in tag:
+                print ' ',name.encode('sjis','ignore'), props
     return 0
 
 if __name__ == '__main__': sys.exit(main(sys.argv))

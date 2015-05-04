@@ -12,7 +12,8 @@ class Primitive(object):
         else:
             self.nid = None
         self.attrs = attrs
-        self.tags = []
+        self.names = []
+        self.props = []
         return
 
     def __repr__(self):
@@ -24,7 +25,9 @@ class Primitive(object):
         k = attrs['k']
         v = attrs['v']
         if k == 'name' or k.startswith('name:'):
-            self.tags.append((k, v))
+            self.names.append((k, v))
+        else:
+            self.props.append((k, v))
         return
 
 

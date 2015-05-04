@@ -5,8 +5,8 @@ exec </dev/null
 renice +20 -p $$
 date
 
-sqlite3 osm-index.db < mkosmindex.sql
-python mkosmindex.py osm-index.db osm-tmp.db 
-sqlite3 osm-index.db < mkosmindex_index.sql
+sqlite3 out/osm-index.db < mkosmindex.sql
+python mkosmindex.py out/osm-index.db tmp/entities.bin tmp/nodes.bin tmp/ways.bin
+sqlite3 out/osm-index.db < mkosmindex_index.sql
 
 date

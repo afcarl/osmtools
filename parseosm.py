@@ -9,12 +9,6 @@ def write_obj(fp, obj):
     fp.write('+'+struct.pack('<I', len(b))+b)
     return
 
-def read_obj(fp):
-    z = fp.read(5)
-    assert z.startswith('+')
-    (n,) = struct.unpack('<xI', z)
-    return marshal.loads(fp.read(n))
-
 def getname(names):
     name = None
     for (k,v) in names:
@@ -23,15 +17,6 @@ def getname(names):
         elif k == 'name:ja':
             name = v
     return name
-
-def getyomi(names):
-    yomi = None
-    for (k,v) in names:
-        if k == 'name:ja_rm' and yomi is None:
-            yomi = v
-        elif k == 'name:ja_kana':
-            yomi = v
-    return yomi
 
 class Parser(OSMXMLParser):
     
@@ -47,10 +32,9 @@ class Parser(OSMXMLParser):
         tid = None
         name = getname(names)
         if name is not None:
-            yomi = getyomi(names)
             self._tid += 1
             tid = self._tid
-            write_obj(self.fp_entity, (tid, name, yomi, props))
+            write_obj(self.fp_entity, (tid, name, props))
         return tid
     
     def add_object(self, obj):
@@ -58,7 +42,7 @@ class Parser(OSMXMLParser):
             tid = self.add_entity(obj.names, obj.props)
             write_obj(self.fp_node, (obj.nid, tid, obj.pos))
         elif isinstance(obj, Way):
-            tid = self.add_entity(obj.names, obj.props)
+            tid = self.add_entity(obj.names, obj.props+[('way','way')])
             if tid is not None:
                 write_obj(self.fp_way, (obj.nid, tid, obj.nodes))
         return
