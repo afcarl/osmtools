@@ -13,7 +13,7 @@ CREATE TABLE node (nid, eid, i);
 CREATE VIRTUAL TABLE point USING rtree (nid, lat, lng);
 EOF
 
-python mkosmindex.py $OSMDB tmp/entities.bin tmp/nodes.bin tmp/ways.bin
+python sortosm.py $OSMDB tmp/entities.bin tmp/nodes.bin tmp/ways.bin
 
 sqlite3 $OSMDB <<EOF
 CREATE INDEX entityi on entity(eid);
