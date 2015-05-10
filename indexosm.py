@@ -39,18 +39,18 @@ def main(argv):
     fp_entity = file(args.pop(0), 'rb')
     #
     gram = {}
-    for (tid,name,_) in read_objs(fp_entity):
+    for (eid,name,_) in read_objs(fp_entity):
         for w in chunk(name):
             if w in gram:
                 r = gram[w]
             else:
                 gram[w] = r = array.array('I')
-            r.append(tid)
+            r.append(eid)
     fp_entity.close()
     #
     dst = dstdb.cursor()
-    for (w, tids) in gram.iteritems():
-        a = array.array('I', sorted(tids))
+    for (w, eids) in gram.iteritems():
+        a = array.array('I', sorted(eids))
         b = buffer(a.tostring())
         dst.execute('INSERT INTO gram_entity VALUES (?,?);', (w, b))
     dstdb.commit()

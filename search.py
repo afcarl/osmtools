@@ -60,21 +60,21 @@ def main(argv):
     else:
         gram_entity = conn.cursor()
         entity = conn.cursor()
+        eids = None
         for name in args:
-            tids = None
             for w in chunk(name.decode('sjis')):
-                gram_entity.execute('SELECT tids FROM gram_entity WHERE w=?;', (w,))
+                gram_entity.execute('SELECT eids FROM gram_entity WHERE w=?;', (w,))
                 for (b,) in gram_entity:
                     a = array.array('I')
                     a.fromstring(b)
-                    if tids is None:
-                        tids = set(a)
+                    if eids is None:
+                        eids = set(a)
                     else:
-                        tids.intersection_update(set(a))
-            for tid in tids:
-                entity.execute('SELECT name,props FROM entity WHERE eid=?;', (tid,))
-                for (name,props) in entity:
-                    print ' ',name.encode('sjis','ignore'), props
+                        eids.intersection_update(set(a))
+        for eid in eids:
+            entity.execute('SELECT name,props FROM entity WHERE eid=?;', (eid,))
+            for (name,props) in entity:
+                print ' ',name.encode('sjis','ignore'), props
     return 0
 
 if __name__ == '__main__': sys.exit(main(sys.argv))

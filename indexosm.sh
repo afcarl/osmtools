@@ -8,7 +8,7 @@ date
 OSMDB=out/osm.db
 
 sqlite3 $OSMDB <<EOF
-CREATE TABLE gram_entity (w, tids);
+CREATE TABLE gram_entity (w, eids);
 EOF
 
 python indexosm.py $OSMDB tmp/entities.bin
