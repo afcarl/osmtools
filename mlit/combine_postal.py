@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# usage: ./combine_postal.py postal.csv address.csv > combined
+# usage: ./combine_postal.py postal.csv address.csv > combined.csv
 #
 import sys
 import csv
@@ -74,7 +74,7 @@ def e(x):
     else:
         return x.encode('utf-8')
 
-def combine(post, addr):
+def combine(rgncode, post, addr):
     r = []
     for (ip,(kp,vp)) in enumerate(post):
         for (ia,(ka,va)) in enumerate(addr):
@@ -93,7 +93,7 @@ def combine(post, addr):
         taken_p.add(ip)
         taken_a.add(ia)
         if kp:
-            print e(kp)+'/'+e(kp), e(vp), e(va)
+            print rgncode, e(kp)+'/'+e(kp), e(vp), e(va)
         else:
             print '! unmatched', e((ka,va))
     for (ip,(kp,vp)) in enumerate(post):
@@ -133,10 +133,11 @@ def main(argv):
         r.append((k,(name,row[3],row[4])))
     fp_a.close()
 
-    for (rgncode,post) in postal.iteritems():
+    for rgncode in sorted(postal.iterkeys()):
         if rgncode not in address: continue
+        post = postal[rgncode]
         addr = address[rgncode]
-        combine(post, addr)
+        combine(rgncode, post, addr)
     return 0
 
 if __name__ == '__main__': sys.exit(main(sys.argv))
