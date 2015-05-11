@@ -8,8 +8,8 @@ date
 OSMDB=out/osm.db
 
 sqlite3 $OSMDB <<EOF
-CREATE TABLE entity (eid, name, props);
-CREATE TABLE node (nid, eid, i);
+CREATE TABLE entity (eid PRIMARY KEY, name, props);
+CREATE TABLE node (nid PRIMARY KEY, eid, i);
 CREATE VIRTUAL TABLE point USING rtree (nid, lat, lng);
 EOF
 
