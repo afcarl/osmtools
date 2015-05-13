@@ -28,22 +28,30 @@ def main(argv):
     fp_node = file(args.pop(0), 'rb')
     fp_way = file(args.pop(0), 'rb')
     #
-    nid2tid = {}
+    nid2tid = dstdb.cursor()
+    nid2tid.execute('CREATE TABLE nid2tid (nid PRIMARY KEY,tid,i);')
     for (_,tid,nids) in read_objs(fp_way):
         for (i,nid) in enumerate(nids):
-            nid2tid[nid] = (tid,i)
+            try:
+                nid2tid.execute('INSERT INTO nid2tid VALUES (?,?,?);', (nid,tid,i))
+            except sqlite3.IntegrityError:
+                pass
+    nid2tid.execute('CREATE INDEX nid2tidi ON nid2tid(nid);')
     fp_way.close()
-    print >>sys.stderr, 'nid2tid:', len(nid2tid)
+    dstdb.commit()
+    print >>sys.stderr, 'nid2tid done'
     #
     for (nid,tid,(lat,lng)) in read_objs(fp_node):
         if tid is None:
-            if nid not in nid2tid: continue
-            (tid,i) = nid2tid[nid]
-        dst.execute('INSERT INTO node VALUES (?,?,?);', (nid,tid,i))
+            nid2tid.execute('SELECT tid,i FROM nid2tid WHERE nid=?;', (nid,))
+            for (tid,i) in nid2tid:
+                break
+            else:
+                continue
         dst.execute('INSERT INTO point VALUES (?,?,?);', (nid,lat,lng))
     fp_node.close()
+    nid2tid.execute('DROP TABLE nid2tid;')
     dstdb.commit()
-    del nid2tid
     #
     for (tid,name,props) in read_objs(fp_entity):
         props = dict(props)
