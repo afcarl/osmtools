@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
+# usage: python expand_addr.py city.csv
+#
 import sys
 import re
 
@@ -27,12 +30,12 @@ def main(argv):
     import csv
     import fileinput
     args = argv[1:]
-    d = {}
+    words = {}
     def add(k, v):
-        if k in d:
-            r = d[k]
+        if k in words:
+            r = words[k]
         else:
-            d[k] = r = set()
+            words[k] = r = set()
         r.add(v)
         return
     #
@@ -47,20 +50,32 @@ def main(argv):
         if not pref.endswith(u'道'):
             add(pref[:-1], (False,rgncode))
         add(city, (True,rgncode))
-        name = x[-1]
-        add(name, (True,rgncode))
-        add(name[:-1], (False,rgncode))
+        for name in x:
+            add(name, (True,rgncode))
+            add(name[:-1], (False,rgncode))
     #
-    print 'ADDRESS = {'
-    for k in sorted(d):
-        v = d[k]
+    EXACT = {}
+    KEYWORD = {}
+    for (k,v) in words.iteritems():
         #if len(v) < 2: continue
         codes = set( code for (_,code) in v )
         exacts = set( exact for (exact,_) in v )
         assert len(exacts) == 1
         exact = list(exacts)[0]
-        print " (u'%s', %r, %r)," % (k.encode('utf-8'), exact, list(codes))
-    print '}'
+        if exact:
+            EXACT[k] = list(codes)
+        else:
+            KEYWORD[k] = list(codes)
+    
+    def show(d, name):
+        print '%s = {' % name
+        for k in sorted(d):
+            v = d[k]
+            print " u'%s': %r," % (k.encode('utf-8'), v)
+        print '}\n'
+        return
+    show(EXACT, 'EXACT')
+    show(KEYWORD, 'KEYWORD')
     return
 
 if __name__ == '__main__': sys.exit(main(sys.argv))
