@@ -9,6 +9,7 @@ ADDRDB=../out/address.db
 
 sqlite3 $ADDRDB <<EOF
 CREATE TABLE address (aid, rgncode, name, postal, lat, lng);
+CREATE VIRTUAL TABLE point USING rtree (aid, lat, lng);
 CREATE TABLE gram_address (w, aids);
 EOF
 

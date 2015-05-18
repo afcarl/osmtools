@@ -61,6 +61,8 @@ def main(argv):
         #print (aid,rgncode,name,pp,lat,lng)
         dst.execute('INSERT INTO address VALUES (?,?,?,?,?,?);',
                     (aid,rgncode,name,pp,lat,lng))
+        dst.execute('INSERT INTO point VALUES (?,?,?);',
+                    (aid,lat,lng))
     dstdb.commit()
     fp_addr.close()
     #
