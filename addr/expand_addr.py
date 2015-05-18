@@ -74,6 +74,7 @@ def main(argv):
             print " u'%s': %r," % (k.encode('utf-8'), v)
         print '}\n'
         return
+    print '# -*- coding: utf-8 -*-'
     show(EXACT, 'EXACT')
     show(KEYWORD, 'KEYWORD')
     return
