@@ -6,7 +6,7 @@ import re
 import reg
 
 WORDS = re.compile(ur'\w+', re.U)
-def chunk(s):
+def getgrams(s):
     for m in WORDS.finditer(s):
         w = m.group(0)
         if len(w) == 1:
@@ -39,7 +39,7 @@ def main(argv):
     #
     gram = {}
     def add_gram(s, aid):
-        for w in chunk(s):
+        for w in getgrams(s):
             if w in gram:
                 r = gram[w]
             else:

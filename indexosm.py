@@ -22,7 +22,7 @@ def read_objs(fp):
     return
 
 WORDS = re.compile(ur'\w+', re.U)
-def chunk(s):
+def getgrams(s):
     for m in WORDS.finditer(s):
         w = m.group(0)
         if len(w) == 1:
@@ -40,7 +40,7 @@ def main(argv):
     #
     gram = {}
     for (eid,name,_) in read_objs(fp_entity):
-        for w in chunk(name):
+        for w in getgrams(name):
             if w in gram:
                 r = gram[w]
             else:

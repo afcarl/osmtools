@@ -14,7 +14,7 @@ def getdist((lat0,lng0),(lat1,lng1)):
     return math.sqrt(dx*dx+dy*dy)
 
 WORDS = re.compile(ur'\w+', re.U)
-def chunk(s):
+def getgrams(s):
     for m in WORDS.finditer(s):
         w = m.group(0)
         if len(w) == 1:
@@ -61,7 +61,7 @@ def main(argv):
     #
     gram_entity = conn.cursor()
     for name in args:
-        for w in chunk(name.decode('sjis')):
+        for w in getgrams(name.decode('sjis')):
             gram_entity.execute('SELECT eids FROM gram_entity WHERE w=?;', (w,))
             for (b,) in gram_entity:
                 a = array.array('I')
