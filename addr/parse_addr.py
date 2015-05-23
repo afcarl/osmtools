@@ -42,11 +42,11 @@ class Trie(object):
             s += c
         return (s,v)
 
-trie = Trie()
+ADDR = Trie()
 for (k,v) in EXACT.iteritems():
-    trie.add(k, (True, v))
+    ADDR.add(k, (True, v))
 for (k,v) in KEYWORD.iteritems():
-    trie.add(k, (False, v))
+    ADDR.add(k, (False, v))
 
 def reg_name(s):
     def f(m): return str(reg.intkan(m.group(0)))
@@ -55,10 +55,19 @@ def reg_name(s):
 
 def parse_addr(db, s):
     s = reg_name(s)
-    if POSTAL.match(s):
-        pass
-    (k,(exact,codes)) = trie.lookup(s)
-
+    while s:
+        if POSTAL.match(s):
+            yield s
+            break
+        (k,v) = ADDR.lookup(s)
+        if v is None:
+            yield s
+            break
+        (exact,codes) = v
+        if not exact:
+            yield k
+        yield codes
+        s = s[len(k):]
     return
 
 def main(argv):
@@ -66,7 +75,8 @@ def main(argv):
     path = args.pop(0)
     db = sqlite3.connect(path)
     #
-    parse_addr(db, u'東京都中野区')
+    for x in parse_addr(db, u'東京都中野区'):
+        print x
     return 0
 
 if __name__ == '__main__': sys.exit(main(sys.argv))
