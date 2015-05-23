@@ -5,20 +5,9 @@ import array
 import re
 import reg
 
-WORDS = re.compile(ur'\w+', re.U)
-def getgrams(s):
-    for m in WORDS.finditer(s):
-        w = m.group(0)
-        if len(w) == 1:
-            yield w
-        else:
-            for (c1,c2) in zip(w[:-1],w[1:]):
-                yield c1+c2
-    return
-
 def reg_name(s):
     def f(m): return str(reg.intkan(m.group(0)))
-    s = reg.DIGIT.sub(f, s).translate(reg.ALT)
+    s = reg.KANDIGIT.sub(f, s).translate(reg.ALT)
     return s
 
 def main(argv):
@@ -39,12 +28,13 @@ def main(argv):
     #
     gram = {}
     def add_gram(s, aid):
-        for w in getgrams(s):
-            if w in gram:
-                r = gram[w]
-            else:
-                gram[w] = r = array.array('I')
-            r.append(aid)
+        for w in reg.chunk(s):
+            for g in reg.getgrams(w):
+                if g in gram:
+                    r = gram[g]
+                else:
+                    gram[g] = r = array.array('I')
+                r.append(aid)
     dst = dstdb.cursor()
     aid = 0
     fp_addr = file(args.pop(0), 'rb')
@@ -66,10 +56,10 @@ def main(argv):
     dstdb.commit()
     fp_addr.close()
     #
-    for (w, aids) in gram.iteritems():
+    for (g, aids) in gram.iteritems():
         a = array.array('I', sorted(aids))
         b = buffer(a.tostring())
-        dst.execute('INSERT INTO gram_address VALUES (?,?);', (w, b))
+        dst.execute('INSERT INTO gram_address VALUES (?,?);', (g, b))
     dstdb.commit()
     
     return 0

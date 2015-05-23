@@ -9,7 +9,7 @@ import reg
 
 def reg_addr(rgncode, s):
     def f(m): return str(reg.intkan(m.group(0)))
-    s = reg.DIGIT.sub(f, s).translate(reg.ALT)
+    s = reg.KANDIGIT.sub(f, s).translate(reg.ALT)
     s = reg.AZA.sub(ur'\1', s)
     s = reg.NO.sub(u'', s)
     s = reg.SPC.sub(u'', s)
