@@ -50,10 +50,10 @@ for (k,v) in KEYWORD.iteritems():
 
 POSTAL = re.compile(r'\d{3}-?\d{4}', re.U)
 DIGIT = re.compile(r'\d+', re.U)
+WORD = re.compile(r'\w+', re.U)
 
 def reg_name(s):
     def f(m): return str(reg.intkan(m.group(0)))
-    s = reg.zen2han(s)
     s = reg.KANDIGIT.sub(f, s).translate(reg.ALT)
     return s
 
@@ -68,22 +68,25 @@ def get_preds(s):
             continue
         m = DIGIT.match(s, i)
         if m:
-            yield [('W', m.group(0))]
+            w = m.group(0)
+            yield [('W', w)]
             i = m.end(0)
             continue
-        if not s[i].isalpha():
-            i += 1
+        m = WORD.match(s, i)
+        if m:
+            (k,v) = REGION.lookup(s, i)
+            if v is None:
+                yield [('W', s[i:])]
+                i = m.end(0)
+            else:
+                (exact,codes) = v
+                if exact:
+                    yield [('C', codes)]
+                else:
+                    yield [('C', codes), ('W', k)]
+                i += len(k)
             continue
-        (k,v) = REGION.lookup(s, i)
-        if v is None:
-            yield [('W', s[i:])]
-            break
-        (exact,codes) = v
-        if exact:
-            yield [('C', codes)]
-        else:
-            yield [('C', codes), ('W', k)]
-        i += len(k)
+        i += 1
     return
 
 def list_addr(preds):
@@ -143,11 +146,9 @@ def main(argv):
     conn = sqlite3.connect(path)
     cur = conn.cursor()
     #
-    s = u'東京都中野江古田2'
-    s = reg_name(s)
-    preds = []
-    for w in reg.chunk(s):
-        preds.extend(get_preds(w))
+    s = u'165-0022 東京都中野区江古田'
+    s = reg.zen2han(s)
+    preds = list(get_preds(s))
     print preds
     for pr in list_addr(preds):
         print pr, search_addr(cur, pr)
