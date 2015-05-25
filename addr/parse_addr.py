@@ -6,15 +6,15 @@ import re
 import reg
 import time
 import array
-from region import EXACT, KEYWORD
+import region
 
 
 ##  TrieDict
 ##
 class TrieDict(object):
     
-    def __init__(self):
-        self.root = {}
+    def __init__(self, root):
+        self.root = root
         return
     
     def add(self, k, v):
@@ -46,12 +46,7 @@ class TrieDict(object):
             s += c
         return (s,v)
 
-REGION = TrieDict()
-for (k,v) in EXACT.iteritems():
-    REGION.add(k, (True, v))
-for (k,v) in KEYWORD.iteritems():
-    REGION.add(k, (False, v))
-
+REGION = TrieDict(region.TRIE)
 POSTAL = re.compile(r'\d{3}-?\d{4}', re.U)
 DIGIT = re.compile(r'\d+', re.U)
 WORD = re.compile(r'[^\d\W]+', re.U)

@@ -6,6 +6,44 @@
 import sys
 import re
 
+
+##  TrieDict
+##
+class TrieDict(object):
+    
+    def __init__(self, root):
+        self.root = root
+        return
+    
+    def add(self, k, v):
+        t0 = self.root
+        for c in k[:-1]:
+            if c in t0:
+                (_,t0) = t0[c]
+            else:
+                t1 = {}
+                t0[c] = (None,t1)
+                t0 = t1
+        c = k[-1]
+        if c in t0:
+            (v0,t1) = t0[c]
+            assert v0 is None
+        else:
+            t1 = {}
+        t0[c] = (v,t1)
+        return
+    
+    def lookup(self, k, i=0):
+        t = self.root
+        v = None
+        s = u''
+        for i in xrange(i, len(k)):
+            c = k[i]
+            if c not in t: break
+            (v,t) = t[c]
+            s += c
+        return (s,v)
+
 PAT1 = re.compile(ur'^(.+市)$')
 PAT2 = re.compile(ur'^(.+市)(.+区)$')
 PAT3 = re.compile(ur'^(.+区)$')
@@ -54,29 +92,19 @@ def main(argv):
             add(name, (True,rgncode))
             add(name[:-1], (False,rgncode))
     #
-    EXACT = {}
-    KEYWORD = {}
+    REGION = TrieDict({})
     for (k,v) in words.iteritems():
         #if len(v) < 2: continue
-        codes = set( code for (_,code) in v )
+        codes = [ code for (_,code) in v ]
         exacts = set( exact for (exact,_) in v )
         assert len(exacts) == 1
         exact = list(exacts)[0]
         if exact:
-            EXACT[k] = list(codes)
+            REGION.add(k, (True, codes))
         else:
-            KEYWORD[k] = list(codes)
-    
-    def show(d, name):
-        print '%s = {' % name
-        for k in sorted(d):
-            v = d[k]
-            print " u'%s': %r," % (k.encode('utf-8'), v)
-        print '}\n'
-        return
+            REGION.add(k, (False, codes))
     print '# -*- coding: utf-8 -*-'
-    show(EXACT, 'EXACT')
-    show(KEYWORD, 'KEYWORD')
+    print 'TRIE = %r' % REGION.root
     return
 
 if __name__ == '__main__': sys.exit(main(sys.argv))
