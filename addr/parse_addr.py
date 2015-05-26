@@ -6,7 +6,8 @@ import re
 import reg
 import time
 import array
-import region
+
+from addrdict import TRIERAW, PREF, REGION
 
 
 ##  TrieDict
@@ -46,7 +47,7 @@ class TrieDict(object):
             s += c
         return (s,v)
 
-REGION = TrieDict(region.TRIE)
+TRIE = TrieDict(TRIERAW)
 POSTAL = re.compile(r'\d{3}-?\d{4}', re.U)
 DIGIT = re.compile(r'\d+', re.U)
 WORD = re.compile(r'[^\d\W]+', re.U)
@@ -66,10 +67,10 @@ class PredRegion(Pred):
 
 class PredPostal(Pred):
     def __init__(self, v):
-        self.postal = v.replace('-','')
+        self.value = v.replace('-','')
         return
     def __repr__(self):
-        return ('<Postal %s-%s>' % (self.postal[:3], self.postal[3:]))
+        return ('<Postal %s-%s>' % (self.value[:3], self.value[3:]))
 
 class PredWord(Pred):
     def __init__(self, w):
@@ -94,7 +95,7 @@ def get_preds(s):
             continue
         m = WORD.match(s, i)
         if m:
-            (k,v) = REGION.lookup(s, i)
+            (k,v) = TRIE.lookup(s, i)
             if v is None:
                 yield (PredWord(m.group(0)),)
                 i = m.end(0)
@@ -122,13 +123,16 @@ def expand_preds(preds):
 def search_addr(cur, preds):
     print 'search_addr:', preds
     codes = None
+    postal = None
     for pred in preds:
         if isinstance(pred, PredRegion):
             if codes is None:
                 codes = set(pred.codes)
             else:
                 codes.intersection_update(set(pred.codes))
-    if not codes: return None
+        elif isinstance(pred, PredPostal):
+            postal = pred
+    if not codes and not postal: return None
     #print 'codes', codes
     aids = None
     for pred in preds:
@@ -144,14 +148,18 @@ def search_addr(cur, preds):
                     else:
                         ids1.intersection_update(set(a))
             if ids1:
-                cur.execute('SELECT aid FROM address WHERE aid IN (%s) AND rgncode IN (%s);' %
-                            (','.join(map(str, ids1)), ','.join(map(str, codes))))
+                if postal is not None:
+                    cur.execute('SELECT aid FROM address WHERE aid IN (%s) AND postal="%s";' %
+                                (','.join(map(str, ids1)), postal.value))
+                else:
+                    cur.execute('SELECT aid FROM address WHERE aid IN (%s) AND rgncode IN (%s);' %
+                                (','.join(map(str, ids1)), ','.join(map(str, codes))))
                 ids1.intersection_update(set( aid for (aid,) in cur ))
             
         elif isinstance(pred, PredPostal):
-            cur.execute('SELECT aid FROM address WHERE postal=?;', (pred.postal,))
+            cur.execute('SELECT aid FROM address WHERE postal=?;', (postal.value,))
             ids1 = set( aid for (aid,) in cur )
-            
+        
         elif isinstance(pred, PredRegion):
             continue
         
@@ -162,6 +170,7 @@ def search_addr(cur, preds):
         else:
             aids.intersection_update(ids1)
             print ' narrow: %r (%d)' % (pred, len(aids))
+
     print ' found:', aids
     return aids
 
@@ -171,8 +180,7 @@ def main(argv):
     conn = sqlite3.connect(path)
     cur = conn.cursor()
     #
-    s = u'東京 中野 江古田33'
-    s = reg.zen2han(s)
+    s = reg.zen2han(' '.join(args).decode('sjis'))
     def f(m): return str(reg.intkan(m.group(0)))
     s = reg.KANDIGIT.sub(f, s)
     preds = list(get_preds(s))

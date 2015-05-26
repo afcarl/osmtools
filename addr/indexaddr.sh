@@ -5,7 +5,7 @@ exec </dev/null
 renice +20 -p $$
 date
 
-ADDRDB=../out/address.db
+ADDRDB=../out/addr.db
 
 sqlite3 $ADDRDB <<EOF
 CREATE TABLE address (aid, rgncode, name, postal, lat, lng);

@@ -77,10 +77,15 @@ def main(argv):
         r.add(v)
         return
     #
+    PREF = {}
+    REGION = {}
     for row in csv.reader(fileinput.input()):
+        prefcode = int(row[0])
         rgncode = int(row[1])
         pref = row[2].decode('utf-8')
         city = row[3].decode('utf-8')
+        PREF[prefcode] = pref
+        REGION[rgncode] = city
         assert city, row
         x = parse(city)
         assert x, city
@@ -92,7 +97,7 @@ def main(argv):
             add(name, (True,rgncode))
             add(name[:-1], (False,rgncode))
     #
-    REGION = TrieDict({})
+    TRIE = TrieDict({})
     for (k,v) in words.iteritems():
         #if len(v) < 2: continue
         codes = [ code for (_,code) in v ]
@@ -100,11 +105,13 @@ def main(argv):
         assert len(exacts) == 1
         exact = list(exacts)[0]
         if exact:
-            REGION.add(k, (True, codes))
+            TRIE.add(k, (True, codes))
         else:
-            REGION.add(k, (False, codes))
+            TRIE.add(k, (False, codes))
     print '# -*- coding: utf-8 -*-'
-    print 'TRIE = %r' % REGION.root
+    print 'TRIERAW = %r' % TRIE.root
+    print 'PREF = %r' % PREF
+    print 'REGION = %r' % REGION
     return
 
 if __name__ == '__main__': sys.exit(main(sys.argv))
