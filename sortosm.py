@@ -48,6 +48,7 @@ def main(argv):
                 break
             else:
                 continue
+        dst.execute('INSERT INTO node VALUES (?,?,?);', (nid,tid,i))
         dst.execute('INSERT INTO point VALUES (?,?,?);', (nid,lat,lng))
     fp_node.close()
     nid2tid.execute('DROP TABLE nid2tid;')

@@ -45,10 +45,10 @@ def main(argv):
         lat = float(lat)
         lng = float(lng)
         pp = postal.get((rgncode,name))
-        add_gram(name, aid)
-        add_gram(reg_name(name), aid)
         aid += 1
         #print (aid,rgncode,name,pp,lat,lng)
+        add_gram(name, aid)
+        add_gram(reg_name(name), aid)
         dst.execute('INSERT INTO address VALUES (?,?,?,?,?,?);',
                     (aid,rgncode,name,pp,lat,lng))
         dst.execute('INSERT INTO point VALUES (?,?,?);',
