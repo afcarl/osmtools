@@ -25,13 +25,11 @@ def search(node, point, entity, lat0, lng0, args, radius=0.005):
                   (lat0-radius,lng0-radius, lat0+radius,lng0+radius))
     eids = {}
     for (nid,lat1,lng1) in point:
-        print (nid,lat1,lng1)
         node.execute('SELECT eid FROM node WHERE nid=?', (nid,))
         for (eid,) in node:
             #print (lat1,lng1), getdist((lat0,lng0),(lat1,lng1)), eid
             if eid in eids: continue
             eids[eid] = (nid,lat1,lng1)
-    print (lat0, lng0, eids)
     #
     for name in args:
         for w in getgrams(name.decode('sjis')):
