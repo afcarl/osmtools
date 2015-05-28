@@ -32,7 +32,7 @@ def search(node, point, entity, lat0, lng0, args, radius=0.005):
             eids[eid] = (nid,lat1,lng1)
     #
     for name in args:
-        for w in getgrams(name.decode('sjis')):
+        for w in getgrams(name):
             entity.execute('SELECT eids FROM gram_entity WHERE w=?;', (w,))
             for (b,) in entity:
                 a = array.array('I')

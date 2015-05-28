@@ -346,6 +346,52 @@ def main(app, argv):
 
 ##  VMap
 ##
+def get_region_name(rgncode):
+    from addrdict import PREF, REGION
+    pref = PREF[rgncode/1000]
+    region = REGION[rgncode]
+    return pref+' '+region
+
+def get_type(props):
+    if props is None:
+        return u''
+    elif props == 'highway=bus_stop':
+        return u'(バス停)'
+    elif props == 'highway=traffic_signals':
+        return u'(信号)'
+    elif props == 'railway=station':
+        return u'(駅)'
+    elif props.startswith('railway='):
+        return u'(線路)'
+    elif props.startswith('highway='):
+        return u'(道路)'
+    elif props.startswith('way='):
+        return u'(敷地その他)'
+    else:
+        return u''
+
+def get_dir(vx, vy):
+    if abs(vx) < abs(vy)*0.4:
+        if 0 < vy:
+            return u'北'
+        else:
+            return u'南'
+    elif abs(vy) < abs(vx)*0.4:
+        if 0 < vx:
+            return u'東'
+        else:
+            return u'西'
+    elif 0 < vx:
+        if 0 < vy:
+            return u'北東'
+        else:
+            return u'南東'
+    else:
+        if 0 < vy:
+            return u'北西'
+        else:
+            return u'南西'
+
 class VMap(WebApp):
 
     DBPATH = './out/'
@@ -365,27 +411,27 @@ class VMap(WebApp):
         return
     
     @GET('/')
-    def index(self):
+    def index(self, s=u''):
         yield Response()
         yield self.HEADER
+        s = rmsp(s.decode(self.codec))
         yield Template(
             u'<h1>vmap</h1>\n'
             u'<form method=GET action="/addr">\n'
             u'住所または郵便番号を入力してください:<br>'
-            u'<input name=s size=50>\n'
+            u'<input name=s size=50 value="$(s)">\n'
             u'<input name=cmd type=submit value="検索">\n'
-            u'</form>\n')
+            u'</form>\n', s=s)
         yield self.FOOTER
         return
     
     @GET('/addr')
     def hello(self, s):
         from search_addr import search
-        from addrdict import PREF, REGION
         yield Response()
         yield self.HEADER
         cur = self.addr_db.cursor()
-        s = s.decode(self.codec)
+        s = rmsp(s.decode(self.codec))
         yield Template(u'<h1>「$(s)」の検索結果</h1>', s=s)
         aids = []
         for r in search(cur, s):
@@ -402,37 +448,95 @@ class VMap(WebApp):
                 for (rgncode,name,postal,lat,lng) in cur:
                     yield Template(
                         u'<li> <a href="/search?p=$[lat],$[lng]">'
-                        u'〒$(postal) $(pref) $(region) $(name)</a>\n',
+                        u'〒$(postal) $(region) $(name)</a>\n',
                         postal=(postal[:3]+'-'+postal[3:]),
-                        pref=PREF[rgncode/1000], region=REGION[rgncode],
-                        name=name, lat=str(lat), lng=str(lng))
+                        region=get_region_name(rgncode), name=name,
+                        lat=str(lat), lng=str(lng))
             yield '</ul>\n'
         yield self.FOOTER
         return
     
     @GET('/search')
-    def search(self, p):
-        from search_obj import search
-        from addrdict import PREF, REGION
+    def search(self, p, s=u'', r=None):
+        from search_obj import search, getdist
         try:
             (lat0,_,lng0) = p.partition(',')
             lat0 = float(lat0)
             lng0 = float(lng0)
+            loc0 = (lat0, lng0)
         except ValueError:
             yield InternalError()
             return
         yield Response()
         yield self.HEADER
+        addr = self.addr_db.cursor()
+        radius = 0.011
+        maxresults = 100
+        R = 0.011
+        DELTA = 0.005
+        
+        loc = u'座標 %.3f,%.3f' % (lat0,lng0)
+        addr.execute('SELECT aid,lat,lng FROM point WHERE '
+                     '?<=lat and ?<=lng and lat<=? and lng<=?;',
+                      (lat0-R,lng0-R, lat0+R,lng0+R))
+        pts = list(addr)
+        if pts:
+            pts.sort(key=lambda (aid,lat1,lng1): getdist(loc0,(lat1,lng1)))
+            (aid,_,_) = pts[0]
+            addr.execute('SELECT rgncode,name FROM address WHERE aid=?;', (aid,))
+            for (rgncode,name) in addr:
+                loc = u'%s %s付近' % (get_region_name(rgncode), name)
+        yield Template(u'<h1>$(loc)</h1>\n', loc=loc)
+        
+        yield Template(
+            u'<div><form method=GET action="/search">\n'
+            u'キーワード: '
+            u'<input name=s size=50 value="$(s)">\n'
+            u'<input name=p type=hidden value="$(p)">\n'
+            u'<input name=cmd type=submit value="検索">\n'
+            u'</form></div>\n',
+            s=s, p=p)
+        
+        yield Template(
+            u'<div>'
+            u'<a href="/">住所入力に戻る</a> &nbsp;\n'
+            u'<a href="/search?p=$(lat0),$(lnge)">[東へ移動]</a> &nbsp;\n'
+            u'<a href="/search?p=$(lat0),$(lngw)">[西へ移動]</a> &nbsp;\n'
+            u'<a href="/search?p=$(lats),$(lng0)">[南へ移動]</a> &nbsp;\n'
+            u'<a href="/search?p=$(latn),$(lng0)">[北へ移動]</a> &nbsp;\n'
+            u'</div>',
+            lat0=lat0, lng0=lng0,
+            lnge=lng0+DELTA, lngw=lng0-DELTA,
+            latn=lat0+DELTA, lats=lat0-DELTA)
+        
+        kwds = []
+        if s:
+            s = rmsp(s.decode(self.codec))
+            kwds = s.split(' ')
         node = self.osm_db.cursor()
         point = self.osm_db.cursor()
         entity = self.osm_db.cursor()
-        kwds = []
-        yield '<ul>\n'
-        for (nid,lat1,lng1,name,props) in search(node, point, entity, lat0, lng0, kwds):
-            yield Template(
-                u'<li> $(name) $(props)',
-                name=name, props=props)
-        yield '</ul>\n'
+        objs = list(search(node, point, entity, lat0, lng0, kwds, radius=radius))
+        if objs:
+            objs.sort(key=lambda (nid,lat1,lng1,name,props): getdist(loc0,(lat1,lng1)))
+            if maxresults < len(objs):
+                yield Template(u'<p> $(n)件中、最初の$(maxresults)件を表示しています。',
+                               n=len(objs), maxresults=maxresults)
+                objs = objs[:maxresults]
+            else:
+                yield Template(u'<p> $(n)件を表示しています。', n=len(objs))
+            yield '<ul>\n'
+            for (nid,lat1,lng1,name,props) in objs:
+                dist = '%.1f' % getdist(loc0,(lat1,lng1))
+                d = get_dir(lng1-lng0, lat1-lat0)
+                yield Template(
+                    u'<li> $(name) $(t) &nbsp; $(d)$(dist)km &nbsp; '
+                    u'<a href="?p=$(lat),$(lng)">[ここに移動]</a>\n',
+                    name=name, t=get_type(props), d=d, dist=dist,
+                    lat=lat1, lng=lng1)
+            yield '</ul>\n'
+        else:
+            yield Template(u'<p> 該当する建物・場所が見つかりませんでした。\n')
         yield self.FOOTER
         return
 
