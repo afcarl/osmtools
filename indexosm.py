@@ -21,15 +21,16 @@ def read_objs(fp):
             break
     return
 
-WORDS = re.compile(ur'\w+', re.U)
+NONWORDS = re.compile(ur'\W+', re.U)
 def getgrams(s):
-    for m in WORDS.finditer(s):
-        w = m.group(0)
-        if len(w) == 1:
-            yield w
-        else:
-            for (c1,c2) in zip(w[:-1],w[1:]):
-                yield c1+c2
+    w = NONWORDS.sub(u'', s)
+    if not w:
+        pass
+    elif len(w) == 1:
+        yield w
+    else:
+        for (c1,c2) in zip(w[:-1],w[1:]):
+            yield c1+c2
     return
 
 def main(argv):
