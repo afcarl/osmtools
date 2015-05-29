@@ -201,7 +201,7 @@ def POST(pat): return Router.make_wrapper('POST', pat)
 ##
 class Response(object):
 
-    def __init__(self, status='200 OK', content_type='text/html', **kwargs):
+    def __init__(self, status='200 OK', content_type='text/html; charset=utf-8', **kwargs):
         self.status = status
         self.headers = [('Content-Type', content_type)]+kwargs.items()
         return
