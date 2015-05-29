@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import sys
 import sqlite3
 import struct
@@ -40,7 +41,10 @@ def main(argv):
     fp_entity = file(args.pop(0), 'rb')
     #
     gram = {}
-    for (eid,name,_) in read_objs(fp_entity):
+    for (eid,name,props) in read_objs(fp_entity):
+        props = dict(props)
+        if props.get('railway') == 'station':
+            name += u'駅'
         for w in getgrams(name):
             if w in gram:
                 r = gram[w]

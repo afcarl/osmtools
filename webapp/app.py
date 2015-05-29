@@ -516,7 +516,9 @@ class VMap(WebApp):
         kwds = []
         if s:
             s = rmsp(s.decode(self.codec))
-            kwds = s.split(' ')
+            if s:
+                kwds = s.split(' ')
+                radius *= 5
         node = self.osm_db.cursor()
         point = self.osm_db.cursor()
         entity = self.osm_db.cursor()
