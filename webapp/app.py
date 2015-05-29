@@ -403,7 +403,8 @@ class VMap(WebApp):
 <head><title>vmap</title></head>
 <body>
 '''
-    FOOTER = '''
+    FOOTER = '''<p>
+<address>powered by Vmap</address>
 </body>
 </html>
 '''
@@ -460,7 +461,7 @@ class VMap(WebApp):
         return
     
     @GET('/search')
-    def search(self, p, s=u'', r=None):
+    def search(self, p, s=u''):
         from search_entity import search, getdist
         try:
             (lat0,_,lng0) = p.partition(',')
@@ -474,7 +475,7 @@ class VMap(WebApp):
         yield self.HEADER
         addr = self.addr_db.cursor()
         radius = 0.011
-        maxresults = 100
+        maxresults = 50
         R = 0.011
         DELTA = 0.005
         
@@ -496,7 +497,7 @@ class VMap(WebApp):
             u'キーワード: '
             u'<input name=s size=50 value="$(s)">\n'
             u'<input name=p type=hidden value="$(p)">\n'
-            u'<input name=cmd type=submit value="検索">\n'
+            u'<input name=cmd type=submit value="絞り込み検索">\n'
             u'</form></div>\n',
             s=s, p=p)
         
@@ -540,6 +541,28 @@ class VMap(WebApp):
             yield '</ul>\n'
         else:
             yield Template(u'<p> 該当する建物・場所が見つかりませんでした。\n')
+        
+        yield Template(
+            u'<div><form method=GET action="/search">\n'
+            u'キーワード: '
+            u'<input name=s size=50 value="$(s)">\n'
+            u'<input name=p type=hidden value="$(p)">\n'
+            u'<input name=cmd type=submit value="絞り込み検索">\n'
+            u'</form></div>\n',
+            s=s, p=p)
+        
+        yield Template(
+            u'<div>'
+            u'<a href="/">住所入力に戻る</a> &nbsp;\n'
+            u'<a href="/search?p=$(lat0),$(lnge)">[東へ移動]</a> &nbsp;\n'
+            u'<a href="/search?p=$(lat0),$(lngw)">[西へ移動]</a> &nbsp;\n'
+            u'<a href="/search?p=$(lats),$(lng0)">[南へ移動]</a> &nbsp;\n'
+            u'<a href="/search?p=$(latn),$(lng0)">[北へ移動]</a> &nbsp;\n'
+            u'</div>',
+            lat0=lat0, lng0=lng0,
+            lnge=lng0+DELTA, lngw=lng0-DELTA,
+            latn=lat0+DELTA, lats=lat0-DELTA)
+        
         yield self.FOOTER
         return
 
