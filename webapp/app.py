@@ -340,12 +340,15 @@ def main(app, argv):
             port = int(args.pop(0))
         run_server(host, port, app)
     else:
-        run_cgi(app)
+        run_httpcgi(app)
     return
 
 
 ##  VMap
 ##
+import addrdict
+import search_addr
+import search_entity
 def get_region_name(rgncode):
     from addrdict import PREF, REGION
     pref = PREF[rgncode/1000]
@@ -394,7 +397,7 @@ def get_dir(vx, vy):
 
 class VMap(WebApp):
 
-    DBPATH = './out/'
+    DBPATH = './db/'
     HEADER = '''<!DOCTYPE html>
 <html>
 <head><title>vmap</title></head>
@@ -458,7 +461,7 @@ class VMap(WebApp):
     
     @GET('/search')
     def search(self, p, s=u'', r=None):
-        from search_obj import search, getdist
+        from search_entity import search, getdist
         try:
             (lat0,_,lng0) = p.partition(',')
             lat0 = float(lat0)
