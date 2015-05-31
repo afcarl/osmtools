@@ -3,6 +3,9 @@ OSM Tools
 
 A little toolset to generate a map database using Sqlite.
 
+The vmap app is available at:
+http://vmap.tabesugi.net/
+
 Terms and Conditions
 ====================
 The MIT License (MIT)
