@@ -166,10 +166,15 @@ def expand_preds(preds):
             yield []
     return f(0)
 
+class AddrNotFound(Exception): pass
+class NoRegion(AddrNotFound): pass
+class NoWord(AddrNotFound): pass
+
 def search_addr(cur, preds):
     #print 'search_addr:', preds
     codes = None
     postal = None
+    word = None
     for pred in preds:
         if isinstance(pred, PredRegion):
             if codes is None:
@@ -178,7 +183,10 @@ def search_addr(cur, preds):
                 codes.intersection_update(set(pred.codes))
         elif isinstance(pred, PredPostal):
             postal = pred
-    if not codes and not postal: return None
+        elif isinstance(pred, PredWord):
+            word = pred
+    if not codes and not postal: raise NoRegion
+    if not word: raise NoWord
     #print 'codes', codes
     aids = None
     for pred in preds:
@@ -227,6 +235,9 @@ def search(cur, s, maxpreds=10):
     preds = list(get_preds(s))
     #print 'preds:', preds
     for (i,pr) in enumerate(expand_preds(preds)):
-        yield search_addr(cur, pr)
+        try:
+            yield search_addr(cur, pr)
+        except AddrNotFound, e:
+            yield e
         if maxpreds <= i: break
     return

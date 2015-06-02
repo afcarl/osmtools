@@ -431,18 +431,27 @@ class VMap(WebApp):
     
     @GET('/addr')
     def hello(self, s):
-        from search_addr import search
+        from search_addr import search, AddrNotFound, NoRegion, NoWord
         yield Response()
         yield self.HEADER
         cur = self.addr_db.cursor()
         s = rmsp(s.decode(self.codec))
         yield Template(u'<h1>「$(s)」の検索結果</h1>', s=s)
         aids = []
+        error = None
         for r in search(cur, s):
             if r is None: continue
+            if isinstance(r, AddrNotFound):
+                error = r
+                continue
             aids.extend(r)
         if not aids:
-            yield Template(u'<p> 該当する住所が見つかりませんでした。\n')
+            if isinstance(error, NoRegion):
+                yield Template(u'<p> エラー: 市町村を入力してください。\n')
+            elif isinstance(error, NoWord):
+                yield Template(u'<p> エラー: 市町村以下の住所を入力してください。\n')
+            else:
+                yield Template(u'<p> 該当する住所が見つかりませんでした。\n')
         else:
             yield Template(u'<p> $(n)件の住所が見つかりました。\n', n=len(aids))
             yield '<ul>\n'
