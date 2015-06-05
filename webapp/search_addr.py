@@ -186,7 +186,7 @@ def search_addr(cur, preds):
         elif isinstance(pred, PredWord):
             word = pred
     if not codes and not postal: raise NoRegion
-    if not word: raise NoWord
+    if not word and not postal: raise NoWord
     #print 'codes', codes
     aids = None
     for pred in preds:
